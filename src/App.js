@@ -4,8 +4,8 @@ import { AuthContext, AuthProvider } from './context/AuthContext';
 import Layout from './components/Layout';
 import Login from './components/Login';
 import Register from './components/Register';
-// import Home from './components/Home';
-// import ConsultaClientes from './components/ConsultaClientes';
+import Home from './components/Home';
+import ConsultarCliente from './components/ConsultarCliente';
 
 const PrivateRoute = ({ component: Component, ...rest }) => {
   const { isAuthenticated } = React.useContext(AuthContext);
@@ -31,8 +31,8 @@ function App() {
           <Switch>
             <Route path="/login" component={Login} />
             <Route path="/register" component={Register} />
-            {/* <PrivateRoute exact pxath="/" component={Home} /> */}
-            {/* <PrivateRoute path="/consulta-clientes" component={ConsultaClientes} /> */}
+            <PrivateRoute exact path="/" component={Home} />
+            <PrivateRoute path="/consulta-clientes" component={ConsultarCliente} />
           </Switch>
         </Layout>
       </Router>
