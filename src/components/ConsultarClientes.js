@@ -11,7 +11,6 @@ const ConsultarClientes = () => {
   const [loading, setLoading] = useState(false);
   const history = useHistory();
   const { userId } = useContext(AuthContext);
-  const baseURL = api.defaults.baseURL;
 
   const buscarClientes = useCallback(async (e) => {
     if (e) {
@@ -19,7 +18,7 @@ const ConsultarClientes = () => {
     }
     setLoading(true);
     try {
-      const response = await api.post(baseURL+'/api/Cliente/Listado', {
+      const response = await api.post('/api/Cliente/Listado', {
         identificacion,
         nombre,
         usuarioId: userId
@@ -30,7 +29,7 @@ const ConsultarClientes = () => {
     } finally {
       setLoading(false);
     }
-  }, [identificacion, nombre, userId, baseURL]);
+  }, [identificacion, nombre, userId]);
 
   useEffect(() => {
     buscarClientes();
@@ -39,7 +38,7 @@ const ConsultarClientes = () => {
   const handleEliminar = async (id) => {
     if (window.confirm('¿Está seguro que desea eliminar este cliente?')) {
       try {
-        await api.delete(baseURL+`/api/Cliente/Eliminar/${id}`);
+        await api.delete(`/api/Cliente/Eliminar/${id}`);
         buscarClientes();
       } catch (error) {
         console.error('Error al eliminar cliente:', error);
@@ -49,10 +48,10 @@ const ConsultarClientes = () => {
 
   return (
     <div className="bg-white shadow-md rounded-lg">
-      <div className="p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-semibold">Consulta de clientes</h2>
-          <div className="space-x-2">
+      <div className="p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+          <h2 className="text-2xl font-semibold mb-4 sm:mb-0">Consulta de clientes</h2>
+          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
             <button
               onClick={() => history.push('/mantenimiento-cliente')}
               className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
@@ -70,7 +69,7 @@ const ConsultarClientes = () => {
           </div>
         </div>
 
-        <form onSubmit={buscarClientes} className="flex gap-4 mb-6">
+        <form onSubmit={buscarClientes} className="flex flex-col sm:flex-row gap-4 mb-6">
           <input
             type="text"
             placeholder="Nombre"

@@ -1,12 +1,12 @@
 import React, { useContext } from 'react';
 import { useHistory } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { Menu } from 'lucide-react';
 
-const Header = () => {
-  const { logout } = useContext(AuthContext);
+const Header = ({ toggleSidebar }) => {
+  const { logout, username } = useContext(AuthContext);
   const history = useHistory();
-  const username = localStorage.getItem('username');
-
+  
   const handleLogout = () => {
     logout();
     history.push('/login');
@@ -17,10 +17,16 @@ const Header = () => {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
+            <button
+              onClick={toggleSidebar}
+              className="mr-4 text-white focus:outline-none md:hidden"
+            >
+              <Menu size={24} />
+            </button>
             <h1 className="text-xl font-bold">COMPANIA PRUEBA</h1>
           </div>
           <div className="flex items-center space-x-4">
-            <span className="text-sm">{username}</span>
+            <span className="text-sm hidden sm:inline">{username}</span>
             <button
               onClick={handleLogout}
               className="bg-white/10 hover:bg-white/20 rounded-full p-2 transition-colors"

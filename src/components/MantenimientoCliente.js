@@ -149,12 +149,14 @@ const MantenimientoCliente = () => {
           ...cliente,
           celular: cliente.telefonoCelular,
           sexo: cliente.sexo.toUpperCase(),
-          //usuarioId: 
+          usuarioId: userId,
         });
       } else {
         await api.post(baseURL+'/api/Cliente/Crear', {
           ...cliente,
-          sexo: cliente.sexo.toUpperCase()
+          celular: cliente.telefonoCelular,
+          sexo: cliente.sexo.toUpperCase(),
+          usuarioId: userId,
         });
       }
       history.push('/consulta-clientes');
@@ -212,7 +214,7 @@ const MantenimientoCliente = () => {
                 <h2 className="text-2xl font-semibold">Mantenimiento de clientes</h2>
               </div>
             </div>
-            <div className="space-x-2">
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
               <button
                 type="submit"
                 disabled={loading}
@@ -385,7 +387,7 @@ const MantenimientoCliente = () => {
                 Interés *
               </label>
               <select
-                name="interesFK"
+                name="interesesId"
                 value={cliente.interesesId}
                 onChange={handleChange}
                 className={`w-full p-2 border rounded-md ${errors.interesesId ? 'border-red-500' : 'border-gray-300'}`}

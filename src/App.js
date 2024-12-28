@@ -7,6 +7,7 @@ import Register from './components/Register';
 import Home from './components/Home';
 import ConsultarClientes from './components/ConsultarClientes';
 import MantenimientoCliente from './components/MantenimientoCliente';
+import NotFound from './components/NotFound';
 
 const PrivateRoute = ({ component: Component, ...rest }) => {
   const { isAuthenticated } = React.useContext(AuthContext);
@@ -36,6 +37,7 @@ function App() {
             <PrivateRoute exact path="/consulta-clientes" component={ConsultarClientes} />
             <PrivateRoute exact path="/mantenimiento-cliente" component={MantenimientoCliente} />
             <PrivateRoute path="/mantenimiento-cliente/:id" component={MantenimientoCliente} />
+            <Route component={NotFound} />
           </Switch>
         </Layout>
       </Router>
