@@ -5,6 +5,7 @@ import { AuthContext } from '../context/AuthContext';
 const Header = () => {
   const { logout } = useContext(AuthContext);
   const history = useHistory();
+  const username = localStorage.getItem('username');
 
   const handleLogout = () => {
     logout();
@@ -19,7 +20,7 @@ const Header = () => {
             <h1 className="text-xl font-bold">COMPANIA PRUEBA</h1>
           </div>
           <div className="flex items-center space-x-4">
-            <span className="text-sm">Nombre de Usuario</span>
+            <span className="text-sm">{username}</span>
             <button
               onClick={handleLogout}
               className="bg-white/10 hover:bg-white/20 rounded-full p-2 transition-colors"

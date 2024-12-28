@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
-import axios from 'axios';
-import { Save, ArrowLeft } from 'lucide-react';
+import api from '../utils/api';
+import { Save, ArrowLeft, Upload } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 
 const MantenimientoCliente = () => {
@@ -9,6 +9,9 @@ const MantenimientoCliente = () => {
   const history = useHistory();
   const { userId } = useContext(AuthContext);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [previewImage, setPreviewImage] = useState(null);
+  
   const [cliente, setCliente] = useState({
     nombre: '',
     apellidos: '',
@@ -17,7 +20,7 @@ const MantenimientoCliente = () => {
     otroTelefono: '',
     direccion: '',
     fNacimiento: '',
-    fAfiliacion: '',
+    fAfiliacion: new Date().toISOString().split('T')[0],
     sexo: '',
     resennaPersonal: '',
     imagen: '',
@@ -27,27 +30,119 @@ const MantenimientoCliente = () => {
 
   useEffect(() => {
     if (id) {
-      // Aquí iría la lógica para cargar los datos del cliente si es una edición
-      // Por ahora usaremos datos de ejemplo
+      const cargarCliente = async () => {
+        try {
+          const response = await api.get(`https://pruebareactjs.test-class.com/Api/api/Cliente/${id}`);
+          const clienteData = response.data;
+          setCliente({
+            ...clienteData,
+            fNacimiento: clienteData.fNacimiento.split('T')[0],
+            fAfiliacion: clienteData.fAfiliacion.split('T')[0]
+          });
+          if (clienteData.imagen) {
+            setPreviewImage(clienteData.imagen);
+          }
+        } catch (error) {
+          console.error('Error al cargar cliente:', error);
+        }
+      };
+      cargarCliente();
     }
   }, [id]);
 
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!cliente.nombre || cliente.nombre.length > 50) {
+      newErrors.nombre = 'El nombre es obligatorio y no debe exceder 50 caracteres';
+    }
+    
+    if (!cliente.apellidos || cliente.apellidos.length > 100) {
+      newErrors.apellidos = 'Los apellidos son obligatorios y no deben exceder 100 caracteres';
+    }
+    
+    if (!cliente.identificacion || cliente.identificacion.length > 20) {
+      newErrors.identificacion = 'La identificación es obligatoria y no debe exceder 20 caracteres';
+    }
+    
+    if (!cliente.celular || cliente.celular.length > 20) {
+      newErrors.celular = 'El teléfono celular es obligatorio y no debe exceder 20 caracteres';
+    }
+    
+    if (cliente.otroTelefono && cliente.otroTelefono.length > 20) {
+      newErrors.otroTelefono = 'El otro teléfono no debe exceder 20 caracteres';
+    }
+    
+    if (!cliente.direccion || cliente.direccion.length > 200) {
+      newErrors.direccion = 'La dirección es obligatoria y no debe exceder 200 caracteres';
+    }
+    
+    if (!cliente.fNacimiento) {
+      newErrors.fNacimiento = 'La fecha de nacimiento es obligatoria';
+    }
+    
+    if (!cliente.fAfiliacion) {
+      newErrors.fAfiliacion = 'La fecha de afiliación es obligatoria';
+    }
+    
+    if (!cliente.sexo || !['M', 'F'].includes(cliente.sexo)) {
+      newErrors.sexo = 'El género es obligatorio (M/F)';
+    }
+    
+    if (!cliente.resennaPersonal || cliente.resennaPersonal.length > 200) {
+      newErrors.resennaPersonal = 'La reseña es obligatoria y no debe exceder 200 caracteres';
+    }
+    
+    if (!cliente.interesFK) {
+      newErrors.interesFK = 'El interés es obligatorio';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result;
+        setPreviewImage(base64String);
+        setCliente(prev => ({
+          ...prev,
+          imagen: base64String
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
     setLoading(true);
 
     try {
       if (id) {
-        await axios.post('https://pruebareactjs.test-class.com/Api/api/Cliente/Actualizar', {
+        await api.post('https://pruebareactjs.test-class.com/Api/api/Cliente/Actualizar', {
           id,
-          ...cliente
+          ...cliente,
+          sexo: cliente.sexo.toUpperCase()
         });
       } else {
-        await axios.post('https://pruebareactjs.test-class.com/Api/api/Cliente/Crear', cliente);
+        await api.post('https://pruebareactjs.test-class.com/Api/api/Cliente/Crear', {
+          ...cliente,
+          sexo: cliente.sexo.toUpperCase()
+        });
       }
       history.push('/consulta-clientes');
     } catch (error) {
       console.error('Error al guardar cliente:', error);
+      setErrors({ submit: 'Error al guardar el cliente. Por favor, intente nuevamente.' });
     } finally {
       setLoading(false);
     }
@@ -59,6 +154,13 @@ const MantenimientoCliente = () => {
       ...prev,
       [name]: value
     }));
+    // Limpiar error del campo cuando el usuario empiece a escribir
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: null
+      }));
+    }
   };
 
   return (
@@ -67,23 +169,45 @@ const MantenimientoCliente = () => {
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center">
-              <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center mr-3">
-                <span className="text-gray-600">👤</span>
+              <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mr-3 overflow-hidden">
+                {previewImage ? (
+                  <img 
+                    src={previewImage} 
+                    alt="Cliente" 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-gray-600 text-2xl">👤</span>
+                )}
               </div>
-              <h2 className="text-2xl font-semibold">Mantenimiento de clientes</h2>
+              <div>
+                <h2 className="text-2xl font-semibold">Mantenimiento de clientes</h2>
+                <div className="mt-2">
+                  <label className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 cursor-pointer">
+                    <Upload className="w-4 h-4 mr-2" />
+                    <span>Subir imagen</span>
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                    />
+                  </label>
+                </div>
+              </div>
             </div>
             <div className="space-x-2">
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
               >
                 <Save className="w-4 h-4 mr-2" />
                 Guardar
               </button>
               <button
                 type="button"
-                onClick={() => history.goBack()}
+                onClick={() => history.push('/consulta-clientes')}
                 className="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -92,99 +216,137 @@ const MantenimientoCliente = () => {
             </div>
           </div>
 
+          {errors.submit && (
+            <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-md">
+              {errors.submit}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Identificación
+                Identificación *
               </label>
               <input
                 type="text"
                 name="identificacion"
                 value={cliente.identificacion}
                 onChange={handleChange}
-                className="w-full p-2 border rounded-md"
+                maxLength={20}
+                className={`w-full p-2 border rounded-md ${errors.identificacion ? 'border-red-500' : 'border-gray-300'}`}
+                required
               />
+              {errors.identificacion && (
+                <p className="mt-1 text-xs text-red-500">{errors.identificacion}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nombre
+                Nombre *
               </label>
               <input
                 type="text"
                 name="nombre"
                 value={cliente.nombre}
                 onChange={handleChange}
-                className="w-full p-2 border rounded-md"
+                maxLength={50}
+                className={`w-full p-2 border rounded-md ${errors.nombre ? 'border-red-500' : 'border-gray-300'}`}
+                required
               />
+              {errors.nombre && (
+                <p className="mt-1 text-xs text-red-500">{errors.nombre}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Apellidos
+                Apellidos *
               </label>
               <input
                 type="text"
                 name="apellidos"
                 value={cliente.apellidos}
                 onChange={handleChange}
-                className="w-full p-2 border rounded-md"
+                maxLength={100}
+                className={`w-full p-2 border rounded-md ${errors.apellidos ? 'border-red-500' : 'border-gray-300'}`}
+                required
               />
+              {errors.apellidos && (
+                <p className="mt-1 text-xs text-red-500">{errors.apellidos}</p>
+              )}
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Género
+                Género *
               </label>
               <select
                 name="sexo"
                 value={cliente.sexo}
                 onChange={handleChange}
-                className="w-full p-2 border rounded-md"
+                className={`w-full p-2 border rounded-md ${errors.sexo ? 'border-red-500' : 'border-gray-300'}`}
+                required
               >
                 <option value="">Seleccione</option>
-                <option value="Femenino">Femenino</option>
-                <option value="Masculino">Masculino</option>
+                <option value="F">Femenino</option>
+                <option value="M">Masculino</option>
               </select>
+              {errors.sexo && (
+                <p className="mt-1 text-xs text-red-500">{errors.sexo}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Fecha de nacimiento
+                Fecha de nacimiento *
               </label>
               <input
                 type="date"
                 name="fNacimiento"
-                value={cliente.fNacimiento.split('T')[0]}
+                value={cliente.fNacimiento}
                 onChange={handleChange}
-                className="w-full p-2 border rounded-md"
+                className={`w-full p-2 border rounded-md ${errors.fNacimiento ? 'border-red-500' : 'border-gray-300'}`}
+                required
               />
+              {errors.fNacimiento && (
+                <p className="mt-1 text-xs text-red-500">{errors.fNacimiento}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Fecha de afiliación
+                Fecha de afiliación *
               </label>
               <input
                 type="date"
                 name="fAfiliacion"
-                value={cliente.fAfiliacion.split('T')[0]}
+                value={cliente.fAfiliacion}
                 onChange={handleChange}
-                className="w-full p-2 border rounded-md"
+                className={`w-full p-2 border rounded-md ${errors.fAfiliacion ? 'border-red-500' : 'border-gray-300'}`}
+                required
               />
+              {errors.fAfiliacion && (
+                <p className="mt-1 text-xs text-red-500">{errors.fAfiliacion}</p>
+              )}
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Teléfono Celular
+                Teléfono Celular *
               </label>
               <input
                 type="tel"
                 name="celular"
                 value={cliente.celular}
                 onChange={handleChange}
-                className="w-full p-2 border rounded-md"
+                maxLength={20}
+                className={`w-full p-2 border rounded-md ${errors.celular ? 'border-red-500' : 'border-gray-300'}`}
+                required
               />
+              {errors.celular && (
+                <p className="mt-1 text-xs text-red-500">{errors.celular}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -195,49 +357,68 @@ const MantenimientoCliente = () => {
                 name="otroTelefono"
                 value={cliente.otroTelefono}
                 onChange={handleChange}
-                className="w-full p-2 border rounded-md"
+                maxLength={20}
+                className={`w-full p-2 border rounded-md ${errors.otroTelefono ? 'border-red-500' : 'border-gray-300'}`}
               />
+              {errors.otroTelefono && (
+                <p className="mt-1 text-xs text-red-500">{errors.otroTelefono}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Interés
+                Interés *
               </label>
               <select
                 name="interesFK"
                 value={cliente.interesFK}
                 onChange={handleChange}
-                className="w-full p-2 border rounded-md"
+                className={`w-full p-2 border rounded-md ${errors.interesFK ? 'border-red-500' : 'border-gray-300'}`}
+                required
               >
                 <option value="">Seleccione</option>
-                {/* Aquí irían las opciones de interés */}
+                <option value="3fa85f64-5717-4562-b3fc-2c963f66afa6">Interés 1</option>
+                {/* Aquí se deberían cargar los intereses desde el backend */}
               </select>
+              {errors.interesFK && (
+                <p className="mt-1 text-xs text-red-500">{errors.interesFK}</p>
+              )}
             </div>
           </div>
 
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Dirección
+              Dirección *
             </label>
             <input
               type="text"
               name="direccion"
               value={cliente.direccion}
               onChange={handleChange}
-              className="w-full p-2 border rounded-md"
+              maxLength={200}
+              className={`w-full p-2 border rounded-md ${errors.direccion ? 'border-red-500' : 'border-gray-300'}`}
+              required
             />
+            {errors.direccion && (
+              <p className="mt-1 text-xs text-red-500">{errors.direccion}</p>
+            )}
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Reseña
+              Reseña *
             </label>
             <textarea
               name="resennaPersonal"
               value={cliente.resennaPersonal}
               onChange={handleChange}
+              maxLength={200}
               rows="4"
-              className="w-full p-2 border rounded-md"
+              className={`w-full p-2 border rounded-md ${errors.resennaPersonal ? 'border-red-500' : 'border-gray-300'}`}
+              required
             />
+            {errors.resennaPersonal && (
+              <p className="mt-1 text-xs text-red-500">{errors.resennaPersonal}</p>
+            )}
           </div>
         </div>
       </form>

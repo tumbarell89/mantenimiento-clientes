@@ -21,11 +21,7 @@ const Login = ({ history }) => {
       });
 
       if (response.data.token) {
-        login(response.data.token, response.data.userId);
-        if (rememberMe) {
-          localStorage.setItem('token', response.data.token);
-          localStorage.setItem('userId', response.data.userId);
-        }
+        login(response.data);
         history.push('/');
       }
     } catch (err) {

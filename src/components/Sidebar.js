@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 
 const Sidebar = () => {
   const location = useLocation();
+  const username = localStorage.getItem('username');
 
   const isActive = (path) => {
     return location.pathname === path ? 'text-blue-500' : 'text-gray-700';
@@ -16,7 +17,7 @@ const Sidebar = () => {
             <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
           </svg>
         </div>
-        <p className="text-center text-gray-700 font-medium">Nombre de Usuario</p>
+        <p className="text-center text-gray-700 font-medium">{username}</p>
       </div>
       <nav className="p-4">
         <p className="text-gray-600 font-bold mb-4">MENÚ</p>

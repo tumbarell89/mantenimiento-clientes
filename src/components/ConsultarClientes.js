@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useHistory } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import { Search, Plus, ArrowLeft, Edit2, Trash2 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 
@@ -18,7 +18,7 @@ const ConsultarClientes = () => {
     }
     setLoading(true);
     try {
-      const response = await axios.post('https://pruebareactjs.test-class.com/Api/api/Cliente/Listado', {
+      const response = await api.post('https://pruebareactjs.test-class.com/Api/api/Cliente/Listado', {
         identificacion,
         nombre,
         usuarioId: userId
@@ -38,7 +38,7 @@ const ConsultarClientes = () => {
   const handleEliminar = async (id) => {
     if (window.confirm('¿Está seguro que desea eliminar este cliente?')) {
       try {
-        await axios.delete(`https://pruebareactjs.test-class.com/Api/api/Cliente/Eliminar/${id}`);
+        await api.delete(`https://pruebareactjs.test-class.com/Api/api/Cliente/Eliminar/${id}`);
         buscarClientes();
       } catch (error) {
         console.error('Error al eliminar cliente:', error);
