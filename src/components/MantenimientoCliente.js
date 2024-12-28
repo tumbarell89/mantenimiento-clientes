@@ -12,7 +12,6 @@ const MantenimientoCliente = () => {
   const [errors, setErrors] = useState({});
   const [previewImage, setPreviewImage] = useState(null);
   const [intereses, setIntereses] = useState([]);
-  const baseURL = api.defaults.baseURL;
   
   const [cliente, setCliente] = useState({
     nombre: '',
@@ -34,7 +33,7 @@ const MantenimientoCliente = () => {
     console.log(userId);
     const intereses = async () => {
       try {
-        const responseInteres = await api.get(baseURL + `/api/Intereses/Listado`);
+        const responseInteres = await api.get(`/api/Intereses/Listado`);
         setIntereses(responseInteres.data); // Guardar los intereses en el estado
       } catch (error) {
         console.error('Error al obtener intereses:', error);
@@ -43,7 +42,7 @@ const MantenimientoCliente = () => {
     if (id) {
       const cargarCliente = async () => {
         try {
-          const response = await api.get(baseURL+`/api/Cliente/Obtener/${id}`);
+          const response = await api.get(`/api/Cliente/Obtener/${id}`);
           const clienteData = response.data;
           setCliente({
             ...clienteData,
@@ -63,7 +62,7 @@ const MantenimientoCliente = () => {
       cargarCliente();
     }
     intereses();
-  }, [baseURL, id]);
+  }, [userId, id]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -144,7 +143,7 @@ const MantenimientoCliente = () => {
     try {
       console.log(cliente);
       if (id) {
-        await api.post(baseURL+'/api/Cliente/Actualizar', {
+        await api.post('/api/Cliente/Actualizar', {
           id,
           ...cliente,
           celular: cliente.telefonoCelular,
@@ -152,7 +151,7 @@ const MantenimientoCliente = () => {
           usuarioId: userId,
         });
       } else {
-        await api.post(baseURL+'/api/Cliente/Crear', {
+        await api.post('/api/Cliente/Crear', {
           ...cliente,
           celular: cliente.telefonoCelular,
           sexo: cliente.sexo.toUpperCase(),
@@ -163,6 +162,11 @@ const MantenimientoCliente = () => {
     } catch (error) {
       console.error('Error al guardar cliente:', error);
       setErrors({ submit: 'Error al guardar el cliente. Por favor, intente nuevamente.' });
+      if (error.response && error.response.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('userId');
+        history.push('/login');
+      }
     } finally {
       setLoading(false);
     }
@@ -174,7 +178,7 @@ const MantenimientoCliente = () => {
       ...prev,
       [name]: value
     }));
-    // Limpiar error del campo cuando el usuario empiece a escribir
+
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,

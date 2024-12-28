@@ -26,10 +26,15 @@ const ConsultarClientes = () => {
       setClientes(response.data);
     } catch (error) {
       console.error('Error al buscar clientes:', error);
+      if (error.response && error.response.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('userId');
+        history.push('/login');
+      }
     } finally {
       setLoading(false);
     }
-  }, [identificacion, nombre, userId]);
+  }, [history, identificacion, nombre, userId]);
 
   useEffect(() => {
     buscarClientes();
@@ -42,6 +47,11 @@ const ConsultarClientes = () => {
         buscarClientes();
       } catch (error) {
         console.error('Error al eliminar cliente:', error);
+        if (error.response && error.response.status === 401) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('userId');
+          history.push('/login');
+        }
       }
     }
   };
