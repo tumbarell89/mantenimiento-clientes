@@ -11,31 +11,43 @@ const MantenimientoCliente = () => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [previewImage, setPreviewImage] = useState(null);
+  const [intereses, setIntereses] = useState([]);
+  const baseURL = api.defaults.baseURL;
   
   const [cliente, setCliente] = useState({
     nombre: '',
     apellidos: '',
     identificacion: '',
-    celular: '',
+    telefonoCelular: '',
     otroTelefono: '',
     direccion: '',
     fNacimiento: '',
     fAfiliacion: new Date().toISOString().split('T')[0],
     sexo: '',
-    resennaPersonal: '',
+    resenaPersonal: '',
     imagen: '',
-    interesFK: '',
+    interesesId: '',
     usuarioId: userId
   });
 
   useEffect(() => {
+    console.log(userId);
+    const intereses = async () => {
+      try {
+        const responseInteres = await api.get(baseURL + `/api/Intereses/Listado`);
+        setIntereses(responseInteres.data); // Guardar los intereses en el estado
+      } catch (error) {
+        console.error('Error al obtener intereses:', error);
+      }
+    };
     if (id) {
       const cargarCliente = async () => {
         try {
-          const response = await api.get(`https://pruebareactjs.test-class.com/Api/api/Cliente/${id}`);
+          const response = await api.get(baseURL+`/api/Cliente/Obtener/${id}`);
           const clienteData = response.data;
           setCliente({
             ...clienteData,
+            usuarioId: userId,
             fNacimiento: clienteData.fNacimiento.split('T')[0],
             fAfiliacion: clienteData.fAfiliacion.split('T')[0]
           });
@@ -45,10 +57,13 @@ const MantenimientoCliente = () => {
         } catch (error) {
           console.error('Error al cargar cliente:', error);
         }
+        
       };
+      
       cargarCliente();
     }
-  }, [id]);
+    intereses();
+  }, [baseURL, id]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -65,8 +80,8 @@ const MantenimientoCliente = () => {
       newErrors.identificacion = 'La identificación es obligatoria y no debe exceder 20 caracteres';
     }
     
-    if (!cliente.celular || cliente.celular.length > 20) {
-      newErrors.celular = 'El teléfono celular es obligatorio y no debe exceder 20 caracteres';
+    if (!cliente.telefonoCelular || cliente.telefonoCelular.length > 20) {
+      newErrors.telefonoCelular = 'El teléfono telefonoCelular es obligatorio y no debe exceder 20 caracteres';
     }
     
     if (cliente.otroTelefono && cliente.otroTelefono.length > 20) {
@@ -89,12 +104,12 @@ const MantenimientoCliente = () => {
       newErrors.sexo = 'El género es obligatorio (M/F)';
     }
     
-    if (!cliente.resennaPersonal || cliente.resennaPersonal.length > 200) {
-      newErrors.resennaPersonal = 'La reseña es obligatoria y no debe exceder 200 caracteres';
+    if (!cliente.resenaPersonal || cliente.resenaPersonal.length > 200) {
+      newErrors.resenaPersonal = 'La reseña es obligatoria y no debe exceder 200 caracteres';
     }
     
-    if (!cliente.interesFK) {
-      newErrors.interesFK = 'El interés es obligatorio';
+    if (!cliente.interesesId) {
+      newErrors.interesesId = 'El interés es obligatorio';
     }
 
     setErrors(newErrors);
@@ -127,14 +142,17 @@ const MantenimientoCliente = () => {
     setLoading(true);
 
     try {
+      console.log(cliente);
       if (id) {
-        await api.post('https://pruebareactjs.test-class.com/Api/api/Cliente/Actualizar', {
+        await api.post(baseURL+'/api/Cliente/Actualizar', {
           id,
           ...cliente,
-          sexo: cliente.sexo.toUpperCase()
+          celular: cliente.telefonoCelular,
+          sexo: cliente.sexo.toUpperCase(),
+          //usuarioId: 
         });
       } else {
-        await api.post('https://pruebareactjs.test-class.com/Api/api/Cliente/Crear', {
+        await api.post(baseURL+'/api/Cliente/Crear', {
           ...cliente,
           sexo: cliente.sexo.toUpperCase()
         });
@@ -169,7 +187,7 @@ const MantenimientoCliente = () => {
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center">
-              <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mr-3 overflow-hidden">
+              <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mr-3 overflow-hidden relative">
                 {previewImage ? (
                   <img 
                     src={previewImage} 
@@ -178,22 +196,20 @@ const MantenimientoCliente = () => {
                   />
                 ) : (
                   <span className="text-gray-600 text-2xl">👤</span>
+
                 )}
+                <label className="absolute bottom-0 right-2 flex items-center justify-center p-1 bg-black bg-opacity-50 rounded-full cursor-pointer">
+                  <Upload className="w-4 h-4 text-white" />
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                  />
+                </label>
               </div>
               <div>
                 <h2 className="text-2xl font-semibold">Mantenimiento de clientes</h2>
-                <div className="mt-2">
-                  <label className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 cursor-pointer">
-                    <Upload className="w-4 h-4 mr-2" />
-                    <span>Subir imagen</span>
-                    <input
-                      type="file"
-                      className="hidden"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                    />
-                  </label>
-                </div>
               </div>
             </div>
             <div className="space-x-2">
@@ -333,19 +349,19 @@ const MantenimientoCliente = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Teléfono Celular *
+                Teléfono telefonoCelular *
               </label>
               <input
                 type="tel"
-                name="celular"
-                value={cliente.celular}
+                name="telefonoCelular"
+                value={cliente.telefonoCelular}
                 onChange={handleChange}
                 maxLength={20}
-                className={`w-full p-2 border rounded-md ${errors.celular ? 'border-red-500' : 'border-gray-300'}`}
+                className={`w-full p-2 border rounded-md ${errors.telefonoCelular ? 'border-red-500' : 'border-gray-300'}`}
                 required
               />
-              {errors.celular && (
-                <p className="mt-1 text-xs text-red-500">{errors.celular}</p>
+              {errors.telefonoCelular && (
+                <p className="mt-1 text-xs text-red-500">{errors.telefonoCelular}</p>
               )}
             </div>
             <div>
@@ -370,17 +386,20 @@ const MantenimientoCliente = () => {
               </label>
               <select
                 name="interesFK"
-                value={cliente.interesFK}
+                value={cliente.interesesId}
                 onChange={handleChange}
-                className={`w-full p-2 border rounded-md ${errors.interesFK ? 'border-red-500' : 'border-gray-300'}`}
+                className={`w-full p-2 border rounded-md ${errors.interesesId ? 'border-red-500' : 'border-gray-300'}`}
                 required
               >
                 <option value="">Seleccione</option>
-                <option value="3fa85f64-5717-4562-b3fc-2c963f66afa6">Interés 1</option>
-                {/* Aquí se deberían cargar los intereses desde el backend */}
+                {intereses.length > 0 && intereses.map((interes) => (
+                  <option key={interes.id} value={interes.id}>
+                    {interes.descripcion}
+                  </option>
+                ))}
               </select>
-              {errors.interesFK && (
-                <p className="mt-1 text-xs text-red-500">{errors.interesFK}</p>
+              {errors.interesesId && (
+                <p className="mt-1 text-xs text-red-500">{errors.interesesId}</p>
               )}
             </div>
           </div>
@@ -408,16 +427,16 @@ const MantenimientoCliente = () => {
               Reseña *
             </label>
             <textarea
-              name="resennaPersonal"
-              value={cliente.resennaPersonal}
+              name="resenaPersonal"
+              value={cliente.resenaPersonal}
               onChange={handleChange}
               maxLength={200}
               rows="4"
-              className={`w-full p-2 border rounded-md ${errors.resennaPersonal ? 'border-red-500' : 'border-gray-300'}`}
+              className={`w-full p-2 border rounded-md ${errors.resenaPersonal ? 'border-red-500' : 'border-gray-300'}`}
               required
             />
-            {errors.resennaPersonal && (
-              <p className="mt-1 text-xs text-red-500">{errors.resennaPersonal}</p>
+            {errors.resenaPersonal && (
+              <p className="mt-1 text-xs text-red-500">{errors.resenaPersonal}</p>
             )}
           </div>
         </div>

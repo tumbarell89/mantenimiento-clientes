@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { useHistory } from 'react-router-dom';
 import api from '../utils/api';
 import { Search, Plus, ArrowLeft, Edit2, Trash2 } from 'lucide-react';
@@ -11,14 +11,15 @@ const ConsultarClientes = () => {
   const [loading, setLoading] = useState(false);
   const history = useHistory();
   const { userId } = useContext(AuthContext);
+  const baseURL = api.defaults.baseURL;
 
-  const buscarClientes = async (e) => {
+  const buscarClientes = useCallback(async (e) => {
     if (e) {
       e.preventDefault();
     }
     setLoading(true);
     try {
-      const response = await api.post('https://pruebareactjs.test-class.com/Api/api/Cliente/Listado', {
+      const response = await api.post(baseURL+'/api/Cliente/Listado', {
         identificacion,
         nombre,
         usuarioId: userId
@@ -29,16 +30,16 @@ const ConsultarClientes = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [identificacion, nombre, userId, baseURL]);
 
   useEffect(() => {
     buscarClientes();
-  }, []);
+  }, [buscarClientes]);
 
   const handleEliminar = async (id) => {
     if (window.confirm('¿Está seguro que desea eliminar este cliente?')) {
       try {
-        await api.delete(`https://pruebareactjs.test-class.com/Api/api/Cliente/Eliminar/${id}`);
+        await api.delete(baseURL+`/api/Cliente/Eliminar/${id}`);
         buscarClientes();
       } catch (error) {
         console.error('Error al eliminar cliente:', error);
